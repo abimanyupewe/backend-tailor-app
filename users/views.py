@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, status, decorators
+from rest_framework import viewsets, permissions, status, decorators, filters
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
@@ -61,3 +61,13 @@ class ProfileViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet to list all users (for debugging or admin purposes).
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.AllowAny] # Changed to AllowAny for easier debugging as requested
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['username', 'email']
