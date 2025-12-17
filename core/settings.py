@@ -168,3 +168,8 @@ SPECTACULAR_SETTINGS = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True  # For development only
+
+# Midtrans Configuration
+MIDTRANS_SERVER_KEY = os.getenv('MIDTRANS_SERVER_KEY', '') # Empty as requested
+MIDTRANS_CLIENT_KEY = os.getenv('MIDTRANS_CLIENT_KEY', '') # Empty as requested
+MIDTRANS_IS_PRODUCTION = os.getenv('MIDTRANS_IS_PRODUCTION', 'False') == 'True'

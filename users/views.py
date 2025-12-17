@@ -84,3 +84,10 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny] # Changed to AllowAny for easier debugging as requested
     filter_backends = [filters.SearchFilter]
     search_fields = ['username', 'email']
+
+    def get_queryset(self):
+        queryset = User.objects.all()
+        role = self.request.query_params.get('role')
+        if role:
+            queryset = queryset.filter(role=role)
+        return queryset
