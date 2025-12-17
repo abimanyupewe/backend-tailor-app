@@ -12,23 +12,52 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    re_password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'role', 'phone_number']
+        fields = ['username', 'password', 're_password']
+
+    def validate(self, data):
+        if data['password'] != data['re_password']:
+            raise serializers.ValidationError({"password": "Passwords must match."})
+        return data
 
     def create(self, validated_data):
+        validated_data.pop('re_password')
         user = User.objects.create_user(
             username=validated_data['username'],
-            email=validated_data.get('email', ''),
+            email='',
             password=validated_data['password'],
-            role=validated_data.get('role', User.Role.CUSTOMER),
-            phone_number=validated_data.get('phone_number', '')
+            role=User.Role.CUSTOMER,
+            phone_number=''
         )
-        if user.role == User.Role.CUSTOMER:
-            CustomerProfile.objects.create(user=user)
-        elif user.role == User.Role.TAILOR:
-            TailorProfile.objects.create(user=user, shop_name=f"{user.username}'s Shop")
+        CustomerProfile.objects.create(user=user)
+        return user
+
+class TailorRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    re_password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'password', 're_password']
+
+    def validate(self, data):
+        if data['password'] != data['re_password']:
+            raise serializers.ValidationError({"password": "Passwords must match."})
+        return data
+
+    def create(self, validated_data):
+        validated_data.pop('re_password')
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email='',
+            password=validated_data['password'],
+            role=User.Role.TAILOR,
+            phone_number=''
+        )
+        TailorProfile.objects.create(user=user, shop_name=f"{user.username}'s Shop")
         return user
 
 class LoginSerializer(serializers.Serializer):
@@ -43,12 +72,50 @@ class LoginSerializer(serializers.Serializer):
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    # Writable fields for User update (Flat structure for Form-Data support)
+    email = serializers.EmailField(write_only=True, required=False)
+    username = serializers.CharField(write_only=True, required=False)
+    phone_number = serializers.CharField(write_only=True, required=False)
+    avatar = serializers.ImageField(write_only=True, required=False)
+
     class Meta:
         model = CustomerProfile
-        fields = ['user', 'address']
+        fields = ['user', 'address', 'latitude', 'longitude', 'email', 'username', 'phone_number', 'avatar']
+
+    def update(self, instance, validated_data):
+        user = instance.user
+        
+        # Update User fields from flat data
+        if 'email' in validated_data: user.email = validated_data.pop('email')
+        if 'username' in validated_data: user.username = validated_data.pop('username')
+        if 'phone_number' in validated_data: user.phone_number = validated_data.pop('phone_number')
+        if 'avatar' in validated_data: user.avatar = validated_data.pop('avatar')
+        user.save()
+
+        # Update Profile fields
+        return super().update(instance, validated_data)
 
 class TailorProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    # Writable fields for User update (Flat structure for Form-Data support)
+    email = serializers.EmailField(write_only=True, required=False)
+    username = serializers.CharField(write_only=True, required=False)
+    phone_number = serializers.CharField(write_only=True, required=False)
+    avatar = serializers.ImageField(write_only=True, required=False)
+
     class Meta:
         model = TailorProfile
-        fields = ['user', 'shop_name', 'bio', 'is_verified', 'experience_years']
+        fields = ['user', 'shop_name', 'bio', 'is_verified', 'experience_years', 'shop_image', 'email', 'username', 'phone_number', 'avatar']
+
+    def update(self, instance, validated_data):
+        user = instance.user
+        
+        # Update User fields from flat data
+        if 'email' in validated_data: user.email = validated_data.pop('email')
+        if 'username' in validated_data: user.username = validated_data.pop('username')
+        if 'phone_number' in validated_data: user.phone_number = validated_data.pop('phone_number')
+        if 'avatar' in validated_data: user.avatar = validated_data.pop('avatar')
+        user.save()
+
+        # Update Profile fields
+        return super().update(instance, validated_data)

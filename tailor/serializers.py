@@ -21,7 +21,9 @@ class TailorPostSerializer(serializers.ModelSerializer):
 class TailorDetailSerializer(TailorProfileSerializer):
     services = TailorServiceSerializer(many=True, read_only=True)
     location = ShopLocationSerializer(read_only=True)
+
     posts = TailorPostSerializer(many=True, read_only=True)
+    distance = serializers.FloatField(read_only=True, required=False)
 
     class Meta(TailorProfileSerializer.Meta):
-        fields = TailorProfileSerializer.Meta.fields + ['shop_image', 'services', 'location', 'posts']
+        fields = TailorProfileSerializer.Meta.fields + ['shop_image', 'services', 'location', 'posts', 'distance']

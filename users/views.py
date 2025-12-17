@@ -4,9 +4,10 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
 from .serializers import (
     RegisterSerializer, LoginSerializer, UserSerializer,
-    CustomerProfileSerializer, TailorProfileSerializer
+    CustomerProfileSerializer, TailorProfileSerializer,
+    TailorRegisterSerializer
 )
-from .models import CustomerProfile, TailorProfile
+
 
 User = get_user_model()
 
@@ -16,6 +17,18 @@ class AuthViewSet(viewsets.ViewSet):
     @decorators.action(detail=False, methods=['post'])
     def register(self, request):
         serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'user_id': user.pk,
+            'role': user.role
+        }, status=status.HTTP_201_CREATED)
+
+    @decorators.action(detail=False, methods=['post'], url_path='register-tailor')
+    def register_tailor(self, request):
+        serializer = TailorRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         token, _ = Token.objects.get_or_create(user=user)
