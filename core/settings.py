@@ -173,3 +173,6 @@ CORS_ALLOW_ALL_ORIGINS = True  # For development only
 MIDTRANS_SERVER_KEY = os.getenv('MIDTRANS_SERVER_KEY', '') # Empty as requested
 MIDTRANS_CLIENT_KEY = os.getenv('MIDTRANS_CLIENT_KEY', '') # Empty as requested
 MIDTRANS_IS_PRODUCTION = os.getenv('MIDTRANS_IS_PRODUCTION', 'False') == 'True'
+
+# Email Configuration (Console Backend for Development)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

@@ -70,6 +70,30 @@ class LoginSerializer(serializers.Serializer):
             return user
         raise serializers.ValidationError("Incorrect Credentials")
 
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+    re_new_password = serializers.CharField(required=True)
+
+    def validate(self, data):
+        if data['new_password'] != data['re_new_password']:
+            raise serializers.ValidationError({"new_password": "New passwords must match."})
+        return data
+
+class RequestPasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+class ResetPasswordSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True)
+    re_new_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        if data['new_password'] != data['re_new_password']:
+            raise serializers.ValidationError({"new_password": "Passwords must match."})
+        return data
+
 class CustomerProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     # Writable fields for User update (Flat structure for Form-Data support)
