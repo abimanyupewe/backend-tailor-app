@@ -1,1 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django
+db.sqlite3
+local_settings.py
+media/
+
+# Environment
 .env
+.env-tailor
+env-tailor/
+venv/
+.venv/
+
+# Layout / IDE
+.DS_Store
+.vscode/
+.idea/
