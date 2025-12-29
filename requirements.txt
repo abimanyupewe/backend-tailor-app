@@ -3,7 +3,7 @@ attrs==25.4.0
 certifi==2025.11.12
 charset-normalizer==3.4.4
 dj-database-url==3.0.1
-Django==6.0
+Django==5.1.4
 django-cors-headers==4.9.0
 django-location-field==2.7.3
 django-six==1.0.5
