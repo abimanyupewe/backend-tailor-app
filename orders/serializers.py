@@ -29,7 +29,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
-        user = self.context['request'].user
+        # Avoid duplicate 'customer' arg if passed from perform_create
+        customer = validated_data.pop('customer', None) or self.context['request'].user
         
         # Calculate total price
         total_price = 0
@@ -37,7 +38,7 @@ class OrderSerializer(serializers.ModelSerializer):
             service = item['service']
             total_price += service.base_price * item.get('quantity', 1)
 
-        order = Order.objects.create(customer=user, total_price=total_price, **validated_data)
+        order = Order.objects.create(customer=customer, total_price=total_price, **validated_data)
 
         for item_data in items_data:
             service = item_data['service']
