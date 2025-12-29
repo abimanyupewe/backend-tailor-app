@@ -129,7 +129,7 @@ class TailorProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TailorProfile
-        fields = ['user', 'shop_name', 'bio', 'is_verified', 'experience_years', 'shop_image', 'email', 'username', 'phone_number', 'avatar']
+        fields = ['id', 'user', 'shop_name', 'bio', 'is_verified', 'experience_years', 'shop_image', 'email', 'username', 'phone_number', 'avatar']
 
     def update(self, instance, validated_data):
         user = instance.user
