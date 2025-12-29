@@ -7,6 +7,7 @@ from .models import Order
 import midtransclient
 
 class PaymentNotificationView(APIView):
+    authentication_classes = [] # Disable CSRF check/Session Auth
     permission_classes = [] # Allow Midtrans to post without auth
 
     def post(self, request):
@@ -18,6 +19,7 @@ class PaymentNotificationView(APIView):
         
         try:
             notification_body = request.data
+            print(f"Midtrans Notification Received: {notification_body}") # Debug Log
             # Verify notification functionality provided by library is better
             # But here we trust the payload if it matches our order format
             
