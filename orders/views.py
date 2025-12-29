@@ -3,9 +3,52 @@ from rest_framework.response import Response
 from .models import Order, OrderTracking
 from .serializers import OrderSerializer
 
+from django.conf import settings
+import midtransclient
+import uuid
+
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        order = serializer.save(customer=self.request.user)
+        
+        # Initialize Snap client
+        snap = midtransclient.Snap(
+            is_production=settings.MIDTRANS_IS_PRODUCTION,
+            server_key=settings.MIDTRANS_SERVER_KEY,
+            client_key=settings.MIDTRANS_CLIENT_KEY
+        )
+        
+        # Create transaction parameters
+        transaction_details = {
+            'order_id': f"ORDER-{order.id}-{uuid.uuid4().hex[:6]}", # Unique Order ID
+            'gross_amount': int(order.total_price),
+        }
+        
+        customer_details = {
+            'first_name': order.customer.first_name,
+            'last_name': order.customer.last_name,
+            'email': order.customer.email,
+            'phone': order.customer.phone_number,
+        }
+        
+        transaction = {
+            'transaction_details': transaction_details,
+            'customer_details': customer_details,
+            # You can add item_details here if needed
+        }
+        
+        try:
+            snap_response = snap.create_transaction(transaction)
+            order.snap_token = snap_response['token']
+            order.save()
+        except Exception as e:
+            # Log error or handle gracefully
+            print(f"Midtrans Error: {e}")
+            # We don't fail the order creation, but token will be empty. 
+            # Frontend can retry payment or we can have a separate endpoint to regenerate token.
 
     def get_queryset(self):
         user = self.request.user
