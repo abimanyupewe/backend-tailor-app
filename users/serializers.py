@@ -57,7 +57,7 @@ class TailorRegisterSerializer(serializers.ModelSerializer):
             role=User.Role.TAILOR,
             phone_number=''
         )
-        TailorProfile.objects.create(user=user, shop_name=f"{user.username}'s Shop")
+        TailorProfile.objects.create(user=user, shop_name=f"{user.username}'s Shop", is_verified=True)
         return user
 
 class LoginSerializer(serializers.Serializer):
