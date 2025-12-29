@@ -45,10 +45,9 @@ class OrderViewSet(viewsets.ModelViewSet):
             order.snap_token = snap_response['token']
             order.save()
         except Exception as e:
-            # Log error or handle gracefully
-            print(f"Midtrans Error: {e}")
-            # We don't fail the order creation, but token will be empty. 
-            # Frontend can retry payment or we can have a separate endpoint to regenerate token.
+            # Re-raise exception so Frontend knows why it failed
+            from rest_framework import serializers
+            raise serializers.ValidationError({"midtrans_error": str(e)})
 
     def get_queryset(self):
         user = self.request.user
