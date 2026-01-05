@@ -16,6 +16,7 @@ urlpatterns = [
     path('api/tailor/', include('tailor.urls')),
     path('api/orders/', include('orders.urls')),
     path('api/reviews/', include('reviews.urls')),
+    path('api/chat/', include('chat.urls')),
 ]
 
 if settings.DEBUG:
