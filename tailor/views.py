@@ -134,16 +134,32 @@ class TailorDashboardViewSet(viewsets.ViewSet):
         
         tailor_profile = user.tailor_profile
         
+        # Get date range from query params, default to 7 days
+        days_param = request.query_params.get('range', '7')
+        try:
+            days = int(days_param)
+            if days not in [1, 3, 7, 30]: 
+                 days = 7 # Fallback to default if invalid
+        except ValueError:
+            days = 7
 
+        today = timezone.now().date()
+        start_date = today - datetime.timedelta(days=days - 1) # Inclusive of today
+
+        # 1. Total Revenue (Paid orders within range)
         total_revenue = Order.objects.filter(
             tailor=tailor_profile,
-            payment_status='PAID'
+            payment_status='PAID',
+            created_at__date__gte=start_date
         ).aggregate(total=Sum('total_price'))['total'] or 0
 
-        # 2. Order Statistics
-        order_stats = Order.objects.filter(tailor=tailor_profile).values('status').annotate(count=Count('id'))
+        # 2. Order Statistics (All time or within range? Usually dashboard stats match the range)
+        # Let's filter stats by range too for consistency
+        order_stats = Order.objects.filter(
+            tailor=tailor_profile,
+            created_at__date__gte=start_date
+        ).values('status').annotate(count=Count('id'))
         
-        # Format stats into a dictionary
         stats_dict = {
             'PENDING': 0,
             'ACCEPTED': 0,
@@ -154,13 +170,12 @@ class TailorDashboardViewSet(viewsets.ViewSet):
         for stat in order_stats:
             stats_dict[stat['status']] = stat['count']
 
-        # 3. Revenue & Sales Chart (Last 7 Days)
-        today = timezone.now().date()
-        last_7_days = [(today - datetime.timedelta(days=i)) for i in range(6, -1, -1)]
+        # 3. Chart Data (Daily breakdown)
+        # Generate list of dates from start_date to today
+        date_list = [(today - datetime.timedelta(days=i)) for i in range(days - 1, -1, -1)]
         
         chart_data = []
-        for date in last_7_days:
-            # Filter orders for this specific date
+        for date in date_list:
             daily_orders = Order.objects.filter(
                 tailor=tailor_profile,
                 created_at__date=date
@@ -176,6 +191,7 @@ class TailorDashboardViewSet(viewsets.ViewSet):
             })
 
         return Response({
+            'range': f"{days} days",
             'total_revenue': total_revenue,
             'order_stats': stats_dict,
             'chart_data': chart_data
