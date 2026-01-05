@@ -7,6 +7,12 @@ from .models import TailorService, ShopLocation, TailorPost
 from users.models import TailorProfile
 from .serializers import TailorDetailSerializer, TailorServiceSerializer, ShopLocationSerializer, TailorPostSerializer
 
+# 1. Total Revenue (Paid or Completed orders)
+from orders.models import Order
+from django.db.models import Sum, Count
+from django.utils import timezone
+import datetime
+
 class TailorViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Public viewset to list and retrieve tailors.
@@ -113,3 +119,64 @@ class TailorPostViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(tailor=self.request.user.tailor_profile)
+
+class TailorDashboardViewSet(viewsets.ViewSet):
+    """
+    ViewSet for Tailor Admin Dashboard Analytics.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @decorators.action(detail=False, methods=['get'])
+    def summary(self, request):
+        user = request.user
+        if user.role != 'TAILOR':
+             return Response({"error": "Only tailors can access this dashboard"}, status=status.HTTP_403_FORBIDDEN)
+        
+        tailor_profile = user.tailor_profile
+        
+
+        total_revenue = Order.objects.filter(
+            tailor=tailor_profile,
+            payment_status='PAID'
+        ).aggregate(total=Sum('total_price'))['total'] or 0
+
+        # 2. Order Statistics
+        order_stats = Order.objects.filter(tailor=tailor_profile).values('status').annotate(count=Count('id'))
+        
+        # Format stats into a dictionary
+        stats_dict = {
+            'PENDING': 0,
+            'ACCEPTED': 0,
+            'IN_PROGRESS': 0,
+            'COMPLETED': 0,
+            'CANCELLED': 0
+        }
+        for stat in order_stats:
+            stats_dict[stat['status']] = stat['count']
+
+        # 3. Revenue & Sales Chart (Last 7 Days)
+        today = timezone.now().date()
+        last_7_days = [(today - datetime.timedelta(days=i)) for i in range(6, -1, -1)]
+        
+        chart_data = []
+        for date in last_7_days:
+            # Filter orders for this specific date
+            daily_orders = Order.objects.filter(
+                tailor=tailor_profile,
+                created_at__date=date
+            )
+            
+            daily_revenue = daily_orders.filter(payment_status='PAID').aggregate(total=Sum('total_price'))['total'] or 0
+            daily_count = daily_orders.count()
+            
+            chart_data.append({
+                'date': date.strftime('%Y-%m-%d'),
+                'revenue': daily_revenue,
+                'orders': daily_count
+            })
+
+        return Response({
+            'total_revenue': total_revenue,
+            'order_stats': stats_dict,
+            'chart_data': chart_data
+        })
