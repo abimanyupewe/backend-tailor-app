@@ -10,6 +10,13 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
     search_fields = ('username', 'email', 'phone_number')
     list_filter = ('role', 'is_staff', 'is_active', 'date_joined')
     
+    fieldsets = BaseUserAdmin.fieldsets + (
+        ("Additional Info", {'fields': ('avatar', 'role', 'phone_number')}),
+    )
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (
+        ("Additional Info", {'fields': ('avatar', 'role', 'phone_number')}),
+    )
+
     def display_avatar(self, obj):
         if obj.avatar:
             return format_html('<img src="{}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;" />', obj.avatar.url)
