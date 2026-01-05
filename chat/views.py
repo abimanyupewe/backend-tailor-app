@@ -54,8 +54,13 @@ class MessageViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         room_id = self.request.query_params.get('room_id')
+        user = self.request.user
         if room_id:
-            return Message.objects.filter(room_id=room_id).order_by('created_at')
+            # Ensure user is part of the room
+            return Message.objects.filter(
+                Q(room__customer=user) | Q(room__tailor__user=user),
+                room_id=room_id
+            ).order_by('created_at')
         return Message.objects.none()
 
     def perform_create(self, serializer):
