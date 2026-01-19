@@ -20,20 +20,18 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
         # This is strictly not needed if we use 'start_chat' action, but good for generic CREATE
         pass
 
-    @decorators.action(detail=False, methods=['post'])
-    def start_chat(self, request):
+    @decorators.action(detail=False, methods=['post'], url_path='start/(?P<user_id>\d+)')
+    def start_chat_by_user(self, request, user_id=None):
         """
-        Start a chat with a tailor (for customers) or customer (for tailors - rare).
-        Usually initiated by Customer from Tailor Profile.
+        Start chat with a tailor (by User ID).
+        URL: /api/chat/start/{user_id}/
         """
-        tailor_id = request.data.get('tailor_id')
-        if not tailor_id:
-            return Response({"error": "tailor_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
-            tailor_profile = TailorProfile.objects.get(id=tailor_id)
+            # Assume user_id passed is the User ID of the Tailor
+            # Find the TailorProfile associated with this User
+            tailor_profile = TailorProfile.objects.get(user_id=user_id)
         except TailorProfile.DoesNotExist:
-             return Response({"error": "Tailor not found"}, status=status.HTTP_404_NOT_FOUND)
+             return Response({"error": "Tailor not found or user is not a tailor"}, status=status.HTTP_404_NOT_FOUND)
 
         # Ensure user is not the same tailor
         if request.user.role == 'TAILOR' and request.user.tailor_profile == tailor_profile:
@@ -53,10 +51,11 @@ class MessageViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        room_id = self.request.query_params.get('room_id')
+        # Support both query_param and URL kwarg (nested)
+        room_id = self.kwargs.get('room_pk') or self.request.query_params.get('room_id')
         user = self.request.user
+        
         if room_id:
-            # Ensure user is part of the room
             return Message.objects.filter(
                 Q(room__customer=user) | Q(room__tailor__user=user),
                 room_id=room_id
@@ -64,8 +63,13 @@ class MessageViewSet(viewsets.ModelViewSet):
         return Message.objects.none()
 
     def perform_create(self, serializer):
-        room_id = self.request.data.get('room')
-        room = ChatRoom.objects.get(pk=room_id)
+        # Support both body param and URL kwarg
+        room_id = self.kwargs.get('room_pk') or self.request.data.get('room')
+        
+        try:
+            room = ChatRoom.objects.get(pk=room_id)
+        except ChatRoom.DoesNotExist:
+             raise serializers.ValidationError({"room": "Room not found"})
         
         # Verify user belongs to room
         if self.request.user != room.customer and (self.request.user.role != 'TAILOR' or self.request.user.tailor_profile != room.tailor):
