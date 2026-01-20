@@ -12,11 +12,19 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     user = UserSerializer(source='order.customer', read_only=True)
+    service_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Review
-        fields = ['id', 'order', 'user', 'rating', 'comment', 'created_at']
-        read_only_fields = ['id', 'created_at', 'user']
+        fields = ['id', 'order', 'user', 'service_name', 'rating', 'comment', 'created_at']
+        read_only_fields = ['id', 'created_at', 'user', 'service_name']
+
+    def get_service_name(self, obj):
+        # Assuming order has items and we take the first one's service name
+        first_item = obj.order.items.first()
+        if first_item and first_item.service:
+            return first_item.service.name
+        return "Custom Order" # Fallback
 
     def validate_order(self, value):
         if value.customer != self.context['request'].user:
