@@ -11,6 +11,7 @@ class Order(models.Model):
         PENDING = 'PENDING', _('Pending')
         ACCEPTED = 'ACCEPTED', _('Accepted')
         IN_PROGRESS = 'IN_PROGRESS', _('In Progress')
+        READY = 'READY', _('Ready to Pickup')
         COMPLETED = 'COMPLETED', _('Completed')
         CANCELLED = 'CANCELLED', _('Cancelled')
 
