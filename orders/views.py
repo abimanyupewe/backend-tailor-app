@@ -58,7 +58,6 @@ class OrderViewSet(viewsets.ModelViewSet):
     @decorators.action(detail=True, methods=['post'])
     def status(self, request, pk=None):
         order = self.get_object()
-        # Ensure only the assigned tailor can update status
         if order.tailor.user != request.user:
              return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
 
