@@ -21,11 +21,15 @@ class OrderSerializer(serializers.ModelSerializer):
     customer = UserSerializer(read_only=True)
     tailor_detail = TailorProfileSerializer(source='tailor', read_only=True)
     tracking_history = OrderTrackingSerializer(many=True, read_only=True)
+    has_review = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
-        fields = ['id', 'customer', 'tailor', 'tailor_detail', 'status', 'total_price', 'created_at', 'updated_at', 'items', 'tracking_history', 'snap_token', 'payment_status']
-        read_only_fields = ['customer', 'total_price', 'status', 'created_at', 'updated_at', 'snap_token', 'payment_status']
+        fields = ['id', 'customer', 'tailor', 'tailor_detail', 'status', 'total_price', 'created_at', 'updated_at', 'items', 'tracking_history', 'snap_token', 'payment_status', 'has_review']
+        read_only_fields = ['customer', 'total_price', 'status', 'created_at', 'updated_at', 'snap_token', 'payment_status', 'has_review']
+
+    def get_has_review(self, obj):
+        return hasattr(obj, 'review')
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')

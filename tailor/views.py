@@ -20,11 +20,12 @@ class TailorViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = TailorProfile.objects.filter(is_verified=True)
     serializer_class = TailorDetailSerializer
     permission_classes = [permissions.AllowAny]
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['shop_name', 'services__name']
+    ordering_fields = ['order_count', 'distance']
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().annotate(order_count=Count('orders'))
         lat = self.request.query_params.get('lat')
         lon = self.request.query_params.get('lon')
         
