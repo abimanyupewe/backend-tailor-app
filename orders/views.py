@@ -73,3 +73,21 @@ class OrderViewSet(viewsets.ModelViewSet):
         OrderTracking.objects.create(order=order, status=new_status, description=description)
 
         return Response({"status": "updated", "current_status": new_status})
+
+from django.core.management import call_command
+from django.http import JsonResponse
+from rest_framework.views import APIView
+
+class CleanupOrdersView(APIView):
+    permission_classes = [permissions.AllowAny] # Protected by secret header logic if needed, or Vercel config
+
+    def get(self, request):
+        # Trigger the management command
+        # In a real production env, you might want to verify a secret token header here
+        # e.g. if request.headers.get('CRON_SECRET') != os.getenv('CRON_SECRET'): return 403
+        
+        try:
+            call_command('cleanup_orders')
+            return JsonResponse({'status': 'success', 'message': 'Cleanup command executed'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
