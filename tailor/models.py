@@ -22,7 +22,14 @@ class ShopLocation(models.Model):
     longitude = models.FloatField(blank=True, null=True)
     
     def save(self, *args, **kwargs):
-        if self.location:
+        # Logic Fix:
+        # If latitude/longitude are set, update 'location' string from them.
+        # Otherwise, if 'location' string is set, update latitude/longitude from it.
+        # This prevents the 'location' string (if stale) from overwriting new lat/long values.
+        
+        if self.latitude is not None and self.longitude is not None:
+             self.location = f"{self.latitude},{self.longitude}"
+        elif self.location:
             try:
                 lat, lon = self.location.split(',')
                 self.latitude = float(lat)
