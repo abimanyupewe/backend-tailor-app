@@ -45,6 +45,7 @@ CSRF_TRUSTED_ORIGINS = [
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'unfold',
     'unfold.contrib.filters',
     'unfold.contrib.forms',
@@ -62,6 +63,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'location_field.apps.DefaultConfig',
+    'channels',
     'tailor',
     'users',
     'orders',
@@ -101,6 +103,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'core.wsgi.application'
+ASGI_APPLICATION = 'core.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 
 # Database
